@@ -29,17 +29,30 @@ app.post("/api/batches", (_req, res) => {
   }
 });
 
-app.get("/api/batches", (_req, res) => {
-  res.json({ jobs: listBatchJobs() });
+app.get("/api/batches", async (_req, res) => {
+  try {
+    const jobs = await listBatchJobs();
+    res.json({ jobs });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
 });
 
-app.get("/api/batches/:id", (req, res) => {
-  const job = getBatchJob(req.params.id);
-  if (!job) {
-    res.status(404).json({ error: "Job not found" });
-    return;
+app.get("/api/batches/:id", async (req, res) => {
+  try {
+    const job = await getBatchJob(req.params.id);
+    if (!job) {
+      res.status(404).json({ error: "Job not found" });
+      return;
+    }
+    res.json(job);
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
-  res.json(job);
 });
 
 app.get("*", (_req, res) => {
