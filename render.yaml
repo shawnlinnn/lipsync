@@ -3,7 +3,7 @@ services:
     name: lip-sync-batch10
     runtime: node
     plan: free
-    buildCommand: npm ci && python3 -m pip install --user pillow
+    buildCommand: npm ci && python3 -m pip install pillow
     startCommand: npm start
     envVars:
       - key: REPLICATE_API_TOKEN
