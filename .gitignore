@@ -1,0 +1,10 @@
+node_modules/
+.DS_Store
+.env
+runs/
+.tmp_2_24/
+.tmp_2_24_lindesey/
+2-24/
+2-24-for-lindesey/
+fish_audio.mp3
+*.raw.mp4

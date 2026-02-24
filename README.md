@@ -1,0 +1,51 @@
+# Lip Sync Batch Web
+
+This project is now a web app that generates **10 lip-sync videos per batch** with **auto-generated hook text**.
+
+## What changed
+
+- No user text input is required.
+- Clicking one button creates a batch of 10 videos.
+- Hook lines follow the existing style and are deduplicated.
+- Used hooks are persisted in `data/text_history.json` so future batches avoid repeats.
+
+## Requirements
+
+- Node.js 18+
+- `ffmpeg` and `ffprobe` available in PATH
+- Python 3 + `Pillow` (used for guaranteed caption rendering when `ffmpeg drawtext` is unavailable)
+- `REPLICATE_API_TOKEN`
+- `FISH_API_KEY`
+- Base video file exists (default: `original_1920.mp4`)
+
+## Run locally
+
+```bash
+npm install
+npm start
+```
+
+Open `http://localhost:3000`.
+
+Before first run, fill keys in `.env`:
+
+```bash
+REPLICATE_API_TOKEN=...
+FISH_API_KEY=...
+```
+
+## API
+
+- `POST /api/batches` create a 10-video batch
+- `GET /api/batches/:id` get job status and file URLs
+- `GET /api/health` token health check
+
+## Deploy on Render
+
+`render.yaml` is included for Blueprint deploy.
+
+Set secrets in Render dashboard:
+- `REPLICATE_API_TOKEN`
+- `FISH_API_KEY`
+
+The app stores generated output under `runs/` on local disk.

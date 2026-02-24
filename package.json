@@ -1,0 +1,15 @@
+{
+  "name": "lip-sync-auto",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "generate": "node generate_lipsync.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "replicate": "^1.1.0"
+  }
+}

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lip Sync Batch 10</title>
+    <style>
+      :root {
+        --bg: #f4f7f2;
+        --ink: #162019;
+        --accent: #0d6e3f;
+        --card: #ffffff;
+        --line: #d9e3d7;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        background: radial-gradient(circle at 5% 10%, #d9f0df 0%, var(--bg) 50%, #edf5ef 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 28px 18px 40px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 2rem;
+      }
+
+      .lead {
+        margin: 0 0 20px;
+        color: #385040;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 8px 22px rgba(10, 40, 18, 0.06);
+      }
+
+      button {
+        background: var(--accent);
+        color: #fff;
+        border: 0;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      #status {
+        margin-top: 12px;
+        padding: 10px;
+        border-radius: 8px;
+        background: #f6faf7;
+        border: 1px solid var(--line);
+        min-height: 44px;
+      }
+
+      .item {
+        margin-top: 12px;
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+      }
+
+      .item p {
+        margin: 8px 0;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        background: #eaf4ed;
+        margin-right: 8px;
+      }
+
+      video {
+        width: 100%;
+        max-width: 460px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+      }
+
+      @media (max-width: 640px) {
+        h1 {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Batch Lip Sync (10 videos)</h1>
+      <p class="lead">No text input. The app auto-generates 10 non-repeating hooks in your current style and renders them one by one.</p>
+      <div class="card">
+        <button id="startBtn">Generate 10 Videos</button>
+        <div id="status">Idle</div>
+      </div>
+      <div id="result"></div>
+    </main>
+
+    <script>
+      const startBtn = document.getElementById("startBtn");
+      const statusEl = document.getElementById("status");
+      const resultEl = document.getElementById("result");
+      let pollTimer = null;
+
+      function escapeHtml(str) {
+        return str
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function renderJob(job) {
+        statusEl.innerHTML = `
+          <div><span class="pill">${job.status}</span>${job.progress}/${job.total}</div>
+          <div>Job ID: ${job.id}</div>
+          ${job.error ? `<div style="color:#b00020;">Error: ${escapeHtml(job.error)}</div>` : ""}
+        `;
+
+        const rows = job.items
+          .map((item) => {
+            const text = item.text ? escapeHtml(item.text) : "(pending)";
+            const media = item.file && item.status === "done"
+              ? `<video controls preload="metadata" src="${item.file}"></video><p><a href="${item.file}" target="_blank" rel="noreferrer">Open video</a></p>`
+              : "";
+            return `
+              <div class="item">
+                <p><strong>#${item.index}</strong> <span class="pill">${item.status}</span></p>
+                <p>${text}</p>
+                ${media}
+              </div>
+            `;
+          })
+          .join("");
+
+        resultEl.innerHTML = `<div class="card" style="margin-top:14px;">${rows}</div>`;
+      }
+
+      async function poll(id) {
+        const res = await fetch(`/api/batches/${id}`);
+        if (!res.ok) throw new Error(`Polling failed: ${res.status}`);
+        const job = await res.json();
+        renderJob(job);
+
+        if (job.status === "completed" || job.status === "failed") {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          startBtn.disabled = false;
+        }
+      }
+
+      startBtn.addEventListener("click", async () => {
+        startBtn.disabled = true;
+        resultEl.innerHTML = "";
+        statusEl.textContent = "Creating batch job...";
+
+        try {
+          const res = await fetch("/api/batches", { method: "POST" });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
+
+          renderJob(data);
+          if (pollTimer) clearInterval(pollTimer);
+          pollTimer = setInterval(() => {
+            poll(data.id).catch((err) => {
+              statusEl.textContent = err.message;
+              clearInterval(pollTimer);
+              pollTimer = null;
+              startBtn.disabled = false;
+            });
+          }, 5000);
+        } catch (err) {
+          statusEl.textContent = err.message;
+          startBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
