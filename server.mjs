@@ -14,7 +14,8 @@ app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
     hasReplicateToken: Boolean((process.env.REPLICATE_API_TOKEN || "").trim()),
-    hasFishApiKey: Boolean((process.env.FISH_API_KEY || "").trim())
+    hasFishApiKey: Boolean((process.env.FISH_API_KEY || "").trim()),
+    hasOpenAIKey: Boolean((process.env.OPENAI_API_KEY || "").trim())
   });
 });
 
