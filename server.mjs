@@ -19,9 +19,9 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-app.post("/api/batches", (_req, res) => {
+app.post("/api/batches", async (_req, res) => {
   try {
-    const job = createBatchJob({ total: 10 });
+    const job = await createBatchJob({ total: 10 });
     res.status(202).json(job);
   } catch (error) {
     res.status(500).json({
