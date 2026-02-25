@@ -11,6 +11,10 @@ const DEFAULT_TEXT = `Stop scrolling. New York is split over one father's decisi
 let drawtextSupportPromise = null;
 const PY_CAPTION_SCRIPT = path.resolve("scripts/render_caption_overlay.py");
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function getArg(name, fallback) {
   const prefix = `--${name}=`;
   const arg = process.argv.find((a) => a.startsWith(prefix));
@@ -43,24 +47,36 @@ async function generateFishAudio({ apiKey, modelId, text, outputPath, fishEndpoi
   ];
 
   const errors = [];
+  const maxRetries = Number.parseInt(process.env.FISH_TTS_RETRIES || "5", 10);
+  const baseDelayMs = Number.parseInt(process.env.FISH_TTS_RETRY_DELAY_MS || "1200", 10);
   for (const endpoint of endpoints) {
     for (const attempt of attempts) {
-      try {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: attempt.headers,
-          body: JSON.stringify(attempt.body)
-        });
-        if (!response.ok) {
-          const errText = await response.text().catch(() => "");
-          errors.push(`${endpoint} via ${attempt.name} failed (${response.status}): ${errText}`);
-          continue;
+      for (let retry = 1; retry <= maxRetries; retry += 1) {
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: attempt.headers,
+            body: JSON.stringify(attempt.body)
+          });
+          if (!response.ok) {
+            const errText = await response.text().catch(() => "");
+            errors.push(`${endpoint} via ${attempt.name} failed (${response.status}) [try ${retry}/${maxRetries}]: ${errText}`);
+            if (response.status >= 500 && retry < maxRetries) {
+              await sleep(baseDelayMs * retry);
+              continue;
+            }
+            break;
+          }
+          const audioBuffer = Buffer.from(await response.arrayBuffer());
+          await writeFile(outputPath, audioBuffer);
+          return audioBuffer;
+        } catch (error) {
+          errors.push(`${endpoint} via ${attempt.name} failed [try ${retry}/${maxRetries}]: ${String(error)}`);
+          if (retry < maxRetries) {
+            await sleep(baseDelayMs * retry);
+            continue;
+          }
         }
-        const audioBuffer = Buffer.from(await response.arrayBuffer());
-        await writeFile(outputPath, audioBuffer);
-        return audioBuffer;
-      } catch (error) {
-        errors.push(`${endpoint} via ${attempt.name} failed: ${String(error)}`);
       }
     }
   }

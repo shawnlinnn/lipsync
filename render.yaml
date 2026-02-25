@@ -14,6 +14,10 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-5.2
+      - key: FISH_TTS_RETRIES
+        value: 5
+      - key: FISH_TTS_RETRY_DELAY_MS
+        value: 1200
       - key: FISH_MODEL_ID
         value: 734a9b543ce2453ea3e0e4212f5fd7f9
       - key: BASE_VIDEO_PATH
