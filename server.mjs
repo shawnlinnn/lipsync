@@ -5,9 +5,10 @@ import { createBatchJob, getBatchJob, listBatchJobs } from "./lib/batch_jobs.mjs
 
 const app = express();
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
+const RUNS_DIR = path.resolve(process.env.RUNS_DIR || "runs");
 
 app.use(express.json({ limit: "1mb" }));
-app.use("/runs", express.static(path.resolve("runs")));
+app.use("/runs", express.static(RUNS_DIR));
 app.use(express.static(path.resolve("public")));
 
 app.get("/api/health", (_req, res) => {

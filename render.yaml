@@ -22,3 +22,5 @@ services:
         value: 734a9b543ce2453ea3e0e4212f5fd7f9
       - key: BASE_VIDEO_PATH
         value: original_1920.mp4
+      - key: RUNS_DIR
+        value: /var/data/runs
